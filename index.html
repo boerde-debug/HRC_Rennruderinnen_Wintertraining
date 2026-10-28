@@ -70,8 +70,16 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .wk{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 0 7px;display:flex;flex-direction:column;align-items:center;gap:5px}
 .wk .n{font-family:var(--f-display);font-weight:700;font-size:18px;line-height:1}
 .wk .dots{display:flex;gap:3px}
-.wk .dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
-.wk .dots i.on{background:var(--done)}
+.wk .dots i{width:7px;height:7px;border-radius:50%;background:transparent;border:1.5px solid var(--muted);opacity:.55}
+.wk .dots i.on{background:var(--done);border-color:var(--done);opacity:1}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:-10px 0 16px;align-items:center}
+.legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.legend i.open{border:1.5px solid var(--muted);opacity:.55}
+.legend i.on{background:var(--done)}
+.btn.check{display:inline-flex;align-items:center;gap:8px;border-color:var(--done);color:var(--done)}
+.btn.check .box{width:16px;height:16px;border:2px solid currentColor;border-radius:4px}
+.btn.check:hover .box{background:var(--done-soft)}
+.pill.open{background:transparent;border:1px solid var(--line)}
 .wk[aria-current="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .wk.full{background:var(--done-soft)}
 @media (max-width:620px){.weeks{grid-template-columns:repeat(7,minmax(0,1fr))}}
@@ -397,6 +405,7 @@ function planView(doc, ro){
       el("span",{class:"n"},w), doc?el("span",{class:"dots"},on.map(x=>el("i",{class:x?"on":""}))):null));
   });
   box.append(strip);
+  if(doc) box.append(el("div",{class:"legend"},el("span",{},el("i",{class:"on"}),"erledigt"),el("span",{},el("i",{class:"open"}),"offen"),el("span",{},"je Woche: Kraft · Ergo · Ausdauer")));
   const w=S.week;
   const group=(doc&&doc.group)||null;
   box.append(el("div",{class:"weekhead"},
@@ -437,7 +446,9 @@ function unitCard(w,u,lbl,entry,group,ro){
   const card=el("article",{class:"unit"+(done?" done":"")});
   card.append(el("div",{class:"tag"},
     el("span",{class:"eyebrow"}, u==="kraft"&&w===0?"Auftakt":lbl),
-    p.test?el("span",{class:"pill test"},"1.000 m Test"):done?el("span",{class:"pill ok"},"✓ erledigt"):null));
+    ro&&!entry ? (p.test?el("span",{class:"pill test"},"1.000 m Test"):null)
+      : done?el("span",{class:"pill ok"},"✓ erledigt"):el("span",{class:"pill open"},"offen")));
+  if(p.test && !(ro&&!entry)) card.append(el("span",{class:"pill test",style:"align-self:flex-start"},"1.000 m Test"));
   card.append(el("h3",{},p.title));
   if(p.desc) card.append(el("div",{class:"desc"},p.desc));
   if(u==="aus") card.append(el("div",{class:"muted",style:"font-size:13px"},"Beispiel – Ausdauer ist frei wählbar."));
@@ -457,11 +468,11 @@ function unitCard(w,u,lbl,entry,group,ro){
   if(!ro){
     const a=el("div",{class:"actions"});
     if(!done){
-      if(!p.test) a.append(el("button",{class:"btn primary",onclick:()=>saveEntry(w,u,{})},"Erledigt ✓"));
+      if(!p.test) a.append(el("button",{class:"btn check",onclick:()=>saveEntry(w,u,{})},el("span",{class:"box","aria-hidden":"true"}),"Als erledigt markieren"));
       a.append(el("button",{class:"btn"+(p.test?" primary":""),onclick:()=>{S.editing=k;S.draft={...(entry||{})};render();}}, p.test?"Testzeit eintragen":"Mit Werten eintragen"));
     } else {
       a.append(el("button",{class:"btn",onclick:()=>{S.editing=k;S.draft={...entry};render();}},"Bearbeiten"));
-      a.append(el("button",{class:"btn ghost",onclick:()=>clearEntry(w,u)},"Zurücksetzen"));
+      a.append(el("button",{class:"btn ghost",onclick:()=>clearEntry(w,u)},"Als offen markieren"));
     }
     card.append(a);
   }
