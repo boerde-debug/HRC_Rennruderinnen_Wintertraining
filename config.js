@@ -3,6 +3,6 @@
 // die Zugriffsregeln in supabase/schema.sql schützen die Daten.
 // NIEMALS den "service_role"/"secret" Key hier eintragen!
 window.WT_CONFIG = {
-  url: "",      // z. B. "https://abcdefgh.supabase.co"
-  anonKey: ""   // beginnt mit "eyJ..." oder "sb_publishable_..."
+  url: "https://jmqjrbbekyowouxehrtg.supabase.co",
+  anonKey: "sb_publishable_-7GmG-pmHVMcaatRUorl5g_NDFjJqqr"
 };
