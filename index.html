@@ -248,62 +248,71 @@ function lastAt(doc){ const e=(doc&&doc.entries)||{}; let m=null; for(const v of
 
 /* ---------- Zustand ---------- */
 const CFG = window.WT_CONFIG || {};
-const S = { sb:null, session:null, uid:null, email:null, coach:false, me:undefined, all:null,
+const LS_KEY = "wt-login";
+const S = { sb:null, login:null, role:null, me:undefined, all:null,
   tab:null, week:null, editing:null, draft:{}, sel:null, readonly:false, regEdit:false, loaded:false,
-  auth:{step:"email", email:"", busy:false} };
-function isCoach(){ return S.coach; }
+  auth:{code:"", busy:false, step:"code", role:null} };
+function isCoach(){ return S.role==="coach"; }
+function readLogin(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"null"); }catch{ return null; } }
+function writeLogin(v){ try{ v ? localStorage.setItem(LS_KEY,JSON.stringify(v)) : localStorage.removeItem(LS_KEY); }catch{} }
 
 /* ---------- Laden & Schreiben (Supabase) ---------- */
+async function call(fn,args){
+  const {data,error}=await S.sb.rpc(fn,args);
+  if(error){ const e=new Error(error.message||"rpc"); e.wrongCode=/wrong_code/.test(error.message||""); throw e; }
+  return data;
+}
 function rowsToEntries(rows){
   const e={};
   for(const r of rows||[]) e[r.entry_key]={...(r.data||{}), done:true, at:r.done_at};
   return e;
 }
+function handleError(err, msg){
+  console.error(err);
+  if(err&&err.wrongCode){ logout(); toast("Der Team-Code hat sich geändert. Bitte neu anmelden."); return; }
+  toast(msg||"Verbindung fehlgeschlagen. Bitte noch einmal versuchen.");
+}
 async function loadMe(){
-  const [p,e]=await Promise.all([
-    S.sb.from("profiles").select("name,grp").eq("id",S.uid).maybeSingle(),
-    S.sb.from("entries").select("entry_key,data,done_at").eq("user_id",S.uid)
-  ]);
-  if(p.error||e.error){ toast("Daten konnten nicht geladen werden."); S.me=null; return; }
-  S.me = p.data ? {name:p.data.name, group:p.data.grp, role:"rower", entries:rowsToEntries(e.data)} : null;
+  try{
+    const d=await call("wt_me",{p_code:S.login.code, p_name:S.login.name});
+    S.me = d ? {name:d.name, group:d.grp, role:"rower", entries:rowsToEntries(d.entries)} : null;
+  }catch(err){ S.me=null; handleError(err,"Daten konnten nicht geladen werden."); }
 }
 async function loadAll(){
-  const [p,e]=await Promise.all([
-    S.sb.from("profiles").select("id,name,grp"),
-    S.sb.from("entries").select("user_id,entry_key,data,done_at")
-  ]);
-  if(p.error||e.error){ toast("Übersicht konnte nicht geladen werden."); S.all=[]; return; }
-  const by={};
-  for(const r of e.data||[]) (by[r.user_id]=by[r.user_id]||[]).push(r);
-  S.all=(p.data||[]).map(x=>({id:x.id, data:{name:x.name, group:x.grp, role:"rower", entries:rowsToEntries(by[x.id])}}));
-}
-function writeFailed(err){
-  console.error(err);
-  toast("Speichern fehlgeschlagen. Bitte Verbindung prüfen und noch einmal versuchen.");
+  try{
+    const d=await call("wt_overview",{p_code:S.login.code});
+    S.all=(d||[]).map(x=>({id:x.name, data:{name:x.name, group:x.grp, role:"rower", entries:rowsToEntries(x.entries)}}));
+  }catch(err){ S.all=[]; handleError(err,"Übersicht konnte nicht geladen werden."); }
 }
 async function saveEntry(w,u,data){
   const k=key(w,u), prev=S.me.entries[k];
   const at=(prev&&prev.at)||new Date().toISOString();
   S.me.entries[k]={...data, done:true, at};
   S.editing=null; S.draft={}; render();
-  const {error}=await S.sb.from("entries").upsert({user_id:S.uid, entry_key:k, data, done_at:at, updated_at:new Date().toISOString()});
-  if(error){ if(prev) S.me.entries[k]=prev; else delete S.me.entries[k]; render(); writeFailed(error); }
-  else toast("Gespeichert");
+  try{ await call("wt_save",{p_code:S.login.code, p_name:S.me.name, p_key:k, p_data:data, p_done_at:at}); toast("Gespeichert"); }
+  catch(err){ if(prev) S.me.entries[k]=prev; else delete S.me.entries[k]; render(); handleError(err,"Speichern fehlgeschlagen. Bitte noch einmal versuchen."); }
 }
 async function clearEntry(w,u){
   const k=key(w,u), prev=S.me.entries[k];
   delete S.me.entries[k]; S.editing=null; S.draft={}; render();
-  const {error}=await S.sb.from("entries").delete().eq("user_id",S.uid).eq("entry_key",k);
-  if(error){ S.me.entries[k]=prev; render(); writeFailed(error); }
+  try{ await call("wt_delete",{p_code:S.login.code, p_name:S.me.name, p_key:k}); }
+  catch(err){ S.me.entries[k]=prev; render(); handleError(err); }
 }
 async function saveProfile(name,group){
-  const {error}=await S.sb.from("profiles").upsert({id:S.uid, name, grp:group});
-  if(error){ writeFailed(error); return; }
-  const entries=(S.me&&S.me.entries)||{};
-  S.me={name, group, role:"rower", entries};
-  S.regEdit=false; S.week=null; S.tab="plan"; render();
+  const old=S.me?S.me.name:null;
+  try{ await call("wt_profile",{p_code:S.login.code, p_old:old, p_name:name, p_grp:group}); }
+  catch(err){ handleError(err, /duplicate|unique/.test(err.message)?"Dieser Name ist schon vergeben.":"Speichern fehlgeschlagen."); return; }
+  S.login={...S.login, name}; writeLogin(S.login);
+  S.regEdit=false; S.week=null; S.me=undefined; render();
+  await loadMe(); render();
 }
 async function refreshAll(){ S.all=null; render(); await loadAll(); render(); }
+function logout(){
+  writeLogin(null);
+  Object.assign(S,{login:null, role:null, me:undefined, all:null, tab:null, week:null, editing:null, sel:null, regEdit:false,
+    auth:{code:"", busy:false, step:"code", role:null}});
+  render();
+}
 
 /* ---------- Rendering ---------- */
 function render(){
@@ -316,25 +325,27 @@ function render(){
     app.append(el("div",{class:"notice warn"},"Die Datenbank ist noch nicht eingerichtet (config.js). Bis dahin ist nur der Plan zu sehen."));
     S.week = S.week ?? 0; app.append(planView(null,true)); return;
   }
-  if(!S.session){ app.append(authView()); S.week = S.week ?? 0; app.append(el("h2",{style:"margin:28px 0 12px"},"Der Plan"), planView(null,true)); return; }
+  // Noch nicht angemeldet bzw. Name noch nicht gewählt
+  if(!S.login || (S.role==="team" && !S.login.name)){
+    app.append(S.auth.step==="name" ? regView() : authView());
+    S.week = S.week ?? 0; app.append(el("h2",{style:"margin:28px 0 12px"},"Der Plan"), planView(null,true)); return;
+  }
 
   bar.hidden=false;
-  bar.append(el("span",{class:"muted"},S.email||""), el("button",{class:"btn ghost",onclick:async()=>{ await S.sb.auth.signOut(); }},"Abmelden"));
+  bar.append(el("span",{class:"muted"}, isCoach()?"Trainerin":S.login.name), el("button",{class:"btn ghost",onclick:logout},"Abmelden"));
 
-  const coach=isCoach();
-  tabs.hidden=!coach;
-  if(!S.tab) S.tab = (coach && !S.me) ? "coach" : "plan";
-  if(coach){
-    for(const [id,lbl] of [["plan", S.me ? "Mein Plan" : "Plan"],["coach","Trainerin"]]){
-      tabs.append(el("button",{role:"tab","aria-selected":String(S.tab===id),onclick:()=>{S.tab=id; if(id==="coach"&&S.all===null) refreshAll(); render();}},lbl));
+  if(isCoach()){
+    tabs.hidden=false;
+    if(!S.tab) S.tab="coach";
+    for(const [id,lbl] of [["plan","Plan"],["coach","Trainerin"]]){
+      tabs.append(el("button",{role:"tab","aria-selected":String(S.tab===id),onclick:()=>{S.tab=id; render();}},lbl));
     }
+    if(S.tab==="coach"){ app.append(coachView()); return; }
+    S.week=S.week??0; app.append(planView(null,true)); return;
   }
-  if(S.tab==="coach" && coach){ app.append(coachView()); return; }
+  tabs.hidden=true;
   if(S.me===undefined){ app.append(el("div",{class:"empty"},"Profil wird geladen …")); return; }
-  if(!S.me || S.regEdit){
-    if(coach && !S.regEdit && S.tab==="plan" && S.coachPlanOnly){ S.week=S.week??0; app.append(planView(null,true)); return; }
-    app.append(regView()); return;
-  }
+  if(!S.me || S.regEdit){ app.append(regView()); return; }
   if(S.week==null) S.week=currentWeek(S.me);
   app.append(meHeader(), planView(S.me, S.readonly));
 }
@@ -343,40 +354,23 @@ function render(){
 function authView(){
   const A=S.auth;
   const box=el("section",{class:"reg"});
-  const redirect=location.origin+location.pathname;
-  if(A.step==="email"){
-    const em=el("input",{id:"auth-email",type:"email",autocomplete:"email",placeholder:"name@beispiel.de",value:A.email});
-    const send=async ev=>{
-      ev.preventDefault();
-      const email=em.value.trim(); if(!/^\S+@\S+\.\S+$/.test(email)){ toast("Bitte eine gültige E-Mail-Adresse eingeben."); return; }
-      A.email=email; A.busy=true; render();
-      const {error}=await S.sb.auth.signInWithOtp({email, options:{emailRedirectTo:redirect, shouldCreateUser:true}});
-      A.busy=false;
-      if(error){ toast(error.status===429?"Zu viele Anfragen – bitte in ein paar Minuten erneut versuchen.":"E-Mail konnte nicht gesendet werden."); render(); return; }
-      A.step="code"; render();
-    };
-    box.append(el("div",{},el("h2",{},"Anmelden"),
-      el("p",{class:"muted",style:"margin:4px 0 0"},"Gib deine E-Mail-Adresse ein. Du bekommst einen Link zum Anmelden – ohne Passwort. Du bleibst danach auf diesem Gerät angemeldet.")));
-    box.append(el("form",{class:"inline",onsubmit:send},
-      el("label",{class:"f"},"E-Mail",em),
-      el("button",{class:"btn primary",type:"submit",disabled:A.busy},A.busy?"Wird gesendet …":"Login-Link senden")));
-  } else {
-    const code=el("input",{id:"auth-code",inputmode:"numeric",autocomplete:"one-time-code",placeholder:"123456",maxlength:"10"});
-    const verify=async ev=>{
-      ev.preventDefault();
-      const token=code.value.replace(/\s/g,""); if(!token){ toast("Bitte den Code aus der E-Mail eingeben."); return; }
-      A.busy=true; render();
-      const {error}=await S.sb.auth.verifyOtp({email:A.email, token, type:"email"});
-      A.busy=false;
-      if(error){ toast("Code ungültig oder abgelaufen."); render(); }
-    };
-    box.append(el("div",{},el("h2",{},"Schau in dein Postfach"),
-      el("p",{class:"muted",style:"margin:4px 0 0"},"Wir haben eine E-Mail an "+A.email+" geschickt. Tippe auf den Link darin – oder gib hier den Code aus der E-Mail ein.")));
-    box.append(el("form",{class:"inline",onsubmit:verify},
-      el("label",{class:"f"},"Code",code),
-      el("button",{class:"btn primary",type:"submit",disabled:A.busy},"Anmelden"),
-      el("button",{class:"btn ghost",type:"button",onclick:()=>{A.step="email";render();}},"Andere Adresse")));
-  }
+  const code=el("input",{id:"auth-code",type:"password",autocomplete:"current-password",placeholder:"Code",value:A.code});
+  const go=async ev=>{
+    ev.preventDefault();
+    const c=code.value.trim(); if(!c){ toast("Bitte den Code eingeben."); return; }
+    A.code=c; A.busy=true; render();
+    let role=null;
+    try{ role=await call("wt_check",{p_code:c}); }
+    catch(err){ A.busy=false; render(); toast(err.wrongCode?"Der Code stimmt nicht.":"Verbindung fehlgeschlagen. Bitte noch einmal versuchen."); return; }
+    A.busy=false; S.role=role;
+    if(role==="coach"){ S.login={code:c, role}; writeLogin(S.login); S.tab="coach"; render(); await loadAll(); render(); return; }
+    S.login={code:c, role, name:null}; A.step="name"; render();
+  };
+  box.append(el("div",{},el("h2",{},"Anmelden"),
+    el("p",{class:"muted",style:"margin:4px 0 0"},"Gib den Team-Code ein, den du von der Trainerin bekommen hast. Danach wählst du deinen Namen. Du bleibst auf diesem Gerät angemeldet.")));
+  box.append(el("form",{class:"inline",onsubmit:go},
+    el("label",{class:"f"},"Team-Code",code),
+    el("button",{class:"btn primary",type:"submit",disabled:A.busy},A.busy?"Wird geprüft …":"Weiter")));
   return box;
 }
 
@@ -499,17 +493,27 @@ function entryForm(w,u,p,entry){
 
 
 /* ---------- Profil ---------- */
+async function chooseName(name,group){
+  if(S.me || S.regEdit){ return saveProfile(name,group); }
+  // erste Anmeldung auf diesem Gerät: Namen anlegen bzw. übernehmen
+  try{
+    const existing=await call("wt_me",{p_code:S.login.code, p_name:name});
+    if(!existing) await call("wt_profile",{p_code:S.login.code, p_old:null, p_name:name, p_grp:group});
+  }catch(err){ handleError(err,"Anmeldung fehlgeschlagen. Bitte noch einmal versuchen."); return; }
+  S.login={...S.login, name}; writeLogin(S.login); S.auth.step="code";
+  S.me=undefined; S.week=null; render(); await loadMe(); render();
+}
 function regView(){
   const box=el("section",{class:"reg"});
-  const editing=!!S.me;
+  const editing=!!(S.me && S.regEdit);
   box.append(el("div",{},
     el("h2",{},editing?"Name oder Gruppe ändern":"Wer bist du?"),
-    el("p",{class:"muted",style:"margin:4px 0 0"}, editing?"Deine Einträge bleiben erhalten.":"Wähle einmal deinen Namen. Danach siehst du hier deinen Plan und kannst Einheiten bestätigen.")));
+    el("p",{class:"muted",style:"margin:4px 0 0"}, editing?"Deine Einträge bleiben erhalten.":"Tippe auf deinen Namen. Hast du dich schon auf einem anderen Gerät angemeldet, erscheinen hier deine bisherigen Einträge.")));
   for(const g of [1,2]){
     const [a,b]=BASE[g];
     box.append(el("div",{},
       el("div",{class:"eyebrow",style:"margin-bottom:8px"},"Gruppe "+g+" · Split "+fmt(a,false)+"–"+fmt(b,false)+" /500 m"),
-      el("div",{class:"namegrid"},ROSTER[g].map(n=>el("button",{onclick:()=>saveProfile(n,g)},n)))));
+      el("div",{class:"namegrid"},ROSTER[g].map(n=>el("button",{onclick:()=>chooseName(n,g)},n)))));
   }
   const nm=el("input",{id:"reg-name",placeholder:"Vor- und Nachname",maxlength:"80"});
   const gr=el("select",{id:"reg-group"},el("option",{value:"1"},"Gruppe 1"),el("option",{value:"2"},"Gruppe 2"));
@@ -518,12 +522,11 @@ function regView(){
     el("div",{class:"eyebrow",style:"margin-bottom:8px"},"Nicht in der Liste?"),
     el("div",{class:"inline"},
       el("label",{class:"f"},"Name",nm), el("label",{class:"f"},"Gruppe",gr),
-      el("button",{class:"btn primary",onclick:()=>{const n=nm.value.trim(); if(!n){toast("Bitte einen Namen eingeben.");return;} saveProfile(n,+gr.value);}},"Übernehmen"))));
+      el("button",{class:"btn primary",onclick:()=>{const n=nm.value.trim(); if(!n){toast("Bitte einen Namen eingeben.");return;} chooseName(n,+gr.value);}},"Übernehmen"))));
   const foot=el("div",{class:"inline"});
   if(editing) foot.append(el("button",{class:"btn ghost",onclick:()=>{S.regEdit=false;render();}},"Abbrechen"));
-  if(!editing && isCoach()) foot.append(el("span",{class:"muted"},"Du trainierst nicht selbst mit?"),
-    el("button",{class:"btn",onclick:()=>{S.coachPlanOnly=true;render();}},"Nur den Plan ansehen"));
-  if(foot.childNodes.length) box.append(foot);
+  else foot.append(el("button",{class:"btn ghost",onclick:logout},"Anderen Code eingeben"));
+  box.append(foot);
   return box;
 }
 
@@ -622,31 +625,19 @@ function detailPanel(r){
 }
 
 /* ---------- Start ---------- */
-async function onSession(session){
-  const uid = session ? session.user.id : null;
-  if(uid===S.uid && S.loaded) { S.session=session; return; }
-  S.session=session; S.uid=uid; S.email=session?session.user.email:null;
-  S.me=undefined; S.all=null; S.coach=false; S.tab=null; S.week=null; S.coachPlanOnly=false;
-  S.auth={step:"email", email:"", busy:false};
-  S.loaded=true; render();
-  if(!session) return;
-  const c=await S.sb.rpc("is_coach");
-  S.coach = !c.error && c.data===true;
-  await loadMe();
-  if(S.coach && !S.me) { S.tab="coach"; await loadAll(); }
-  render();
-}
 render();
 (async()=>{
   if(!window.supabase || !CFG.url || !CFG.anonKey){ S.loaded=true; render(); return; }
-  S.sb = window.supabase.createClient(CFG.url, CFG.anonKey, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}});
-  S.sb.auth.onAuthStateChange((_ev, session)=>{ setTimeout(()=>onSession(session),0); });
-  const {data}=await S.sb.auth.getSession();
-  await onSession(data.session);
-  if(location.hash.includes("error_description")){
-    toast("Der Login-Link ist abgelaufen. Bitte einen neuen anfordern.");
-    history.replaceState(null,"",location.pathname);
-  }
+  S.sb = window.supabase.createClient(CFG.url, CFG.anonKey, {auth:{persistSession:false, autoRefreshToken:false, detectSessionInUrl:false}});
+  const saved=readLogin();
+  S.loaded=true;
+  if(!saved||!saved.code){ render(); return; }
+  S.login=saved; S.role=saved.role; render();
+  try{ S.role=await call("wt_check",{p_code:saved.code}); S.login.role=S.role; }
+  catch(err){ if(err.wrongCode){ logout(); toast("Der Code hat sich geändert. Bitte neu anmelden."); return; } }
+  if(S.role==="coach"){ await loadAll(); render(); return; }
+  if(!S.login.name){ S.auth.step="name"; render(); return; }
+  await loadMe(); render();
 })();
 </script>
 </body>
