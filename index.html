@@ -3,14 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Wintertraining 26/27</title>
+<title>HRC Rennruderinnen</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<meta name="apple-mobile-web-app-title" content="HRC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0a5f86">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
 /* Layout: schmale App-Spalte; oben Wochenleiste 0–13, darunter drei Einheiten-Karten; Trainerinnen-Ansicht als Tabelle + Detail */
 :root{
   --bg:#edf1f4; --surface:#ffffff; --sunken:#e3e9ee; --ink:#0f1d2b; --muted:#566778; --line:#d3dbe3;
-  --accent:#0a5f86; --accent-ink:#ffffff; --done:#2c7a4b; --done-soft:#e1f1e7; --warn:#a85a17;
+  --accent:#0a5f86; --accent-ink:#ffffff; --accent-soft:#dcecf4; --done:#2c7a4b; --done-soft:#e1f1e7; --warn:#c2246f;
   --readout:#17262b; --readout-ink:#b9f0cf;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -18,11 +25,11 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0c141b; --surface:#141f29; --sunken:#0f1820; --ink:#e3eaf0; --muted:#8c9eaf; --line:#25333f;
-  --accent:#4cb0de; --accent-ink:#06202c; --done:#62c189; --done-soft:#173325; --warn:#e09a55;
+  --accent:#4cb0de; --accent-ink:#06202c; --accent-soft:#12303f; --done:#62c189; --done-soft:#173325; --warn:#f272b0;
   --readout:#0a1214; --readout-ink:#9fe8bd; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0c141b; --surface:#141f29; --sunken:#0f1820; --ink:#e3eaf0; --muted:#8c9eaf; --line:#25333f;
-  --accent:#4cb0de; --accent-ink:#06202c; --done:#62c189; --done-soft:#173325; --warn:#e09a55;
+  --accent:#4cb0de; --accent-ink:#06202c; --accent-soft:#12303f; --done:#62c189; --done-soft:#173325; --warn:#f272b0;
   --readout:#0a1214; --readout-ink:#9fe8bd; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -73,6 +80,9 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .wk .dots{display:flex;gap:3px}
 .wk .dots i{width:7px;height:7px;border-radius:50%;background:transparent;border:1.5px solid var(--muted);opacity:.55}
 .wk .dots i.on{background:var(--done);border-color:var(--done);opacity:1}
+.wk .dots i.bonus{border-radius:2px;transform:rotate(45deg) scale(.9);border-style:dashed;opacity:.8}
+.wk .dots i.bonus.on{border-style:solid}
+.legend i.bonus{border:1.5px dashed var(--muted);border-radius:2px;transform:rotate(45deg) scale(.8);opacity:.7}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:-10px 0 16px;align-items:center}
 .legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .legend i.open{border:1.5px solid var(--muted);opacity:.55}
@@ -81,6 +91,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .btn.check .box{width:16px;height:16px;border:2px solid currentColor;border-radius:4px}
 .btn.check:hover .box{background:var(--done-soft)}
 .pill.open{background:transparent;border:1px solid var(--line)}
+.unit.bonus:not(.done){border-style:dashed}
 .wk[aria-current="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .wk.full{background:var(--done-soft)}
 @media (max-width:620px){.weeks{grid-template-columns:repeat(7,minmax(0,1fr))}}
@@ -152,6 +163,75 @@ tr.pending td{color:var(--muted)}
 .detail .cell{font-size:13px;display:flex;flex-direction:column;gap:3px;min-width:0}
 .detail .cell .comment{font-size:13px}
 @media (max-width:620px){.detail .wrow{grid-template-columns:1fr}}
+/* Navigation + Startseite */
+.back{display:inline-block;font-weight:600;color:var(--accent);text-decoration:none;margin-bottom:6px;font-size:14px}
+.back:hover{text-decoration:underline}
+.hello{font-family:var(--f-display);font-size:22px;font-weight:600;margin:0 0 14px}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:820px){.tiles{grid-template-columns:1fr}}
+.tile{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;color:var(--ink);text-decoration:none;min-height:170px;min-width:0}
+.tile:hover{border-color:var(--accent);box-shadow:0 2px 10px rgb(0 0 0 / .06)}
+.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile .top{display:flex;justify-content:space-between;align-items:flex-start}
+.tile .ti{width:40px;height:40px;color:var(--accent)}
+.tile .ti svg{width:100%;height:100%}
+.tile .tt{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.05}
+.tile .tl{color:var(--muted);font-size:14px}
+.tile .go{margin-top:auto;font-weight:600;color:var(--accent);font-size:14px}
+.tile.soon{border-style:dashed;background:transparent;color:var(--muted)}
+.tile.soon .tt{color:var(--muted)}
+/* Wer macht was? */
+.boardbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.seg{display:inline-flex}
+.seg.small button{padding:6px 12px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.filters,.suggest{display:flex;flex-wrap:wrap;gap:6px}
+.fchip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:14px}
+.fchip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.suggest .fchip{background:var(--bg);font-size:13px}
+.grouph{margin-top:10px;font-size:20px}
+.none{margin:0}
+.donebtn{align-self:flex-start;padding-left:0;margin-top:8px}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.task.mine{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.task.isdone{opacity:.7}
+.task.isdone h3{text-decoration:line-through;text-decoration-thickness:1px}
+.tcheck{width:28px;height:28px;border-radius:7px;border:2px solid var(--muted);background:transparent;color:var(--accent-ink);font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.tcheck:hover{border-color:var(--done)}
+.tcheck[aria-pressed="true"]{background:var(--done);border-color:var(--done);color:var(--surface)}
+.tbody{display:flex;flex-direction:column;gap:7px;min-width:0}
+.thead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.thead h3{overflow-wrap:anywhere}
+.tmeta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px}
+.due{font-weight:600}
+.due.over{color:var(--warn)}
+.people{display:flex;flex-wrap:wrap;gap:6px}
+.person{background:var(--sunken);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:500}
+.person.isme{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nobody{font-size:14px;color:var(--warn);font-weight:500}
+.pill.kind-kurz{background:var(--sunken);color:var(--muted)}
+.pill.kind-mittel{background:var(--accent-soft);color:var(--accent)}
+.pill.free{background:var(--accent-soft);color:var(--accent)}
+.pill.warnp{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.btn.danger{background:var(--warn);border-color:var(--warn);color:var(--surface)}
+.confirm{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:14px;font-weight:600}
+.tform{display:flex;flex-direction:column;gap:12px}
+.row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.row2{grid-template-columns:1fr}}
+.namegrid.pick button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.intro{margin:0 0 4px;max-width:65ch}
+.roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.roles{grid-template-columns:1fr}}
+.role{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.role.free{border-style:dashed}
+.role.mine{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.role .desc{color:var(--muted);font-size:14px}
+.holder{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.small{font-size:13px}
+.takeform{display:flex;flex-direction:column;gap:10px;border-top:1px dashed var(--line);padding-top:10px}
+.hist{align-self:flex-start;padding-left:0;font-size:13px}
+.history{margin:0;padding-left:18px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.history b{color:var(--ink);font-weight:600}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
 .empty{padding:28px 18px;text-align:center;color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.unit,.wk{transition:border-color .15s,background .15s}}
@@ -164,12 +244,13 @@ tr.pending td{color:var(--muted)}
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <span class="eyebrow">Rennruderinnen · 19.10.2026 – 22.02.2027</span>
-      <h1>Wintertraining 26/27</h1>
+      <a href="#" id="back" class="back" hidden>← Übersicht</a>
+      <span class="eyebrow" id="hd-eyebrow">Saison 2026/27</span>
+      <h1 id="hd-title">HRC Rennruderinnen</h1>
     </div>
     <div class="hdr-right"><div class="userbar" id="userbar" hidden></div><nav class="tabs" id="tabs" role="tablist" hidden></nav></div>
   </header>
-  <div id="app"><div class="empty">Plan wird geladen …</div></div>
+  <div id="app"><div class="empty">Wird geladen …</div></div>
 </div>
 <div class="toast" id="toast" hidden></div>
 
@@ -212,8 +293,12 @@ const PLAN = [
  {ergo:{title:"Ergo-Test 1.000 m", desc:"Abschlusstest – Vergleich mit Woche 0.", split:[{own:"eigene Einschätzung"}], test:"end"},
   aus:{title:"Rad + Laufen", desc:"60 min Rad und 30 min Laufen"}}
 ];
-const UNITS = [["kraft","Kraft"],["ergo","Ergo"],["aus","Ausdauer"]];
-const TOTAL = PLAN.length*3;
+const UNITS = [["ergo","Ergo"],["aus","Ausdauer"],["kraft","Kraft"]];
+// Woche 0: Auftakt mit 1.000-m-Test ist Pflicht und steht vorn; sonst ist Kraft optional (Bonus) und steht hinten
+function unitsFor(w){ return PLAN[w].kraft ? [["kraft","Auftakt"],["ergo","Ergo"],["aus","Ausdauer"]] : UNITS; }
+function isBonus(w,u){ return u==="kraft" && !PLAN[w].kraft; }
+const REQ_TOTAL = PLAN.reduce((n,_,w)=>n+unitsFor(w).filter(([u])=>!isBonus(w,u)).length,0);
+const BONUS_TOTAL = PLAN.filter(p=>!p.kraft).length;
 const TESTS = [["start","Start","Woche 0","w0-kraft"],["mid","Zwischen","Woche 7","w7-ergo"],["end","Ende","Woche 13","w13-ergo"]];
 function unitOf(w,u){ const p=PLAN[w]; if(u==="kraft") return p.kraft||ZIRKEL; return p[u]; }
 
@@ -251,10 +336,14 @@ function testsOf(doc){
   for(const [id,, ,k] of TESTS){ out[id]=parseTime(e[k]&&e[k].test1000); }
   return out;
 }
-function doneCount(doc){ const e=(doc&&doc.entries)||{}; return Object.values(e).filter(x=>x&&x.done).length; }
+function isDone(e,w,u){ return !!(e[key(w,u)]&&e[key(w,u)].done); }
+function weekDone(e,w){ return unitsFor(w).every(([u])=>isBonus(w,u)||isDone(e,w,u)); }
+function reqCount(doc){ const e=(doc&&doc.entries)||{}; let n=0; PLAN.forEach((_,w)=>unitsFor(w).forEach(([u])=>{ if(!isBonus(w,u)&&isDone(e,w,u)) n++; })); return n; }
+function bonusCount(doc){ const e=(doc&&doc.entries)||{}; let n=0; PLAN.forEach((_,w)=>{ if(isBonus(w,"kraft")&&isDone(e,w,"kraft")) n++; }); return n; }
+function progressText(doc){ const b=bonusCount(doc); return reqCount(doc)+" von "+REQ_TOTAL+" Einheiten"+(b?" · "+b+"× Kraft-Bonus":""); }
 function currentWeek(doc){
   const e=(doc&&doc.entries)||{};
-  for(let w=0;w<PLAN.length;w++){ if(UNITS.some(([u])=>!(e[key(w,u)]&&e[key(w,u)].done))) return w; }
+  for(let w=0;w<PLAN.length;w++){ if(!weekDone(e,w)) return w; }
   return PLAN.length-1;
 }
 function lastAt(doc){ const e=(doc&&doc.entries)||{}; let m=null; for(const v of Object.values(e)){ if(v&&v.at&&(!m||v.at>m)) m=v.at; } return m; }
@@ -262,7 +351,7 @@ function lastAt(doc){ const e=(doc&&doc.entries)||{}; let m=null; for(const v of
 /* ---------- Zustand ---------- */
 const CFG = window.WT_CONFIG || {};
 const LS_KEY = "wt-login";
-const S = { sb:null, login:null, role:null, me:undefined, all:null,
+const S = { sb:null, login:null, role:null, me:undefined, all:null, board:null, bv:null, tf:null, taskForm:null, roleForm:null, confirm:null, take:null, histOpen:null, showDone:false, busy:false, allLoading:false, boardLoading:false,
   tab:null, week:null, editing:null, draft:{}, sel:null, readonly:false, regEdit:false, loaded:false,
   auth:{code:"", busy:false, step:"code", role:null} };
 function isCoach(){ return S.role==="coach"; }
@@ -319,48 +408,110 @@ async function saveProfile(name,group){
   S.regEdit=false; S.week=null; S.me=undefined; render();
   await loadMe(); render();
 }
-async function refreshAll(){ S.all=null; render(); await loadAll(); render(); }
 function logout(){
   writeLogin(null);
-  Object.assign(S,{login:null, role:null, me:undefined, all:null, tab:null, week:null, editing:null, sel:null, regEdit:false,
+  Object.assign(S,{login:null, role:null, me:undefined, all:null, board:null, taskForm:null, roleForm:null, confirm:null, take:null, tab:null, week:null, editing:null, sel:null, regEdit:false,
     auth:{code:"", busy:false, step:"code", role:null}});
   render();
 }
 
+/* ---------- Navigation ---------- */
+function route(){ const h=(location.hash||"").replace(/^#/,""); return (h==="training"||h==="aufgaben")?h:"start"; }
+window.addEventListener("hashchange",()=>{ S.editing=null; S.taskForm=null; S.roleForm=null; S.confirm=null; window.scrollTo(0,0); render(); });
+const HEAD = {
+  start:   {eyebrow:"Saison 2026/27", title:"HRC Rennruderinnen"},
+  training:{eyebrow:"Rennruderinnen · 19.10.2026 – 22.02.2027", title:"Wintertraining 26/27"},
+  aufgaben:{eyebrow:"HRC Rennruderinnen", title:"Wer macht was?"}
+};
+function ensureAll(){ if(S.all===null && !S.allLoading && S.login){ S.allLoading=true; loadAll().then(()=>{ S.allLoading=false; render(); }); } }
+function ensureBoard(){ if(S.board===null && !S.boardLoading && S.login){ S.boardLoading=true; loadBoard().then(()=>{ S.boardLoading=false; render(); }); } }
+async function refreshAll(){ S.all=null; render(); }
+function loggedIn(){ return !!(S.login && (S.role==="coach" || S.login.name)); }
+function myName(){ return S.role==="coach" ? null : (S.login&&S.login.name); }
+
 /* ---------- Rendering ---------- */
 function render(){
+  const r=route();
   const app=$("#app"); app.replaceChildren();
-  const tabs=$("#tabs"); tabs.replaceChildren();
+  const tabs=$("#tabs"); tabs.replaceChildren(); tabs.hidden=true;
   const bar=$("#userbar"); bar.replaceChildren(); bar.hidden=true;
-  if(!S.loaded){ app.append(el("div",{class:"empty"},"Plan wird geladen …")); return; }
+  $("#hd-eyebrow").textContent=HEAD[r].eyebrow; $("#hd-title").textContent=HEAD[r].title;
+  $("#back").hidden = r==="start";
+  if(!S.loaded){ app.append(el("div",{class:"empty"},"Wird geladen …")); return; }
 
   if(!S.sb){
-    app.append(el("div",{class:"notice warn"},"Die Datenbank ist noch nicht eingerichtet (config.js). Bis dahin ist nur der Plan zu sehen."));
-    S.week = S.week ?? 0; app.append(planView(null,true)); return;
+    app.append(el("div",{class:"notice warn"},"Die Datenbank ist noch nicht eingerichtet (config.js)."));
+    if(r==="training"){ S.week = S.week ?? 0; app.append(planView(null,true)); }
+    return;
   }
   // Noch nicht angemeldet bzw. Name noch nicht gewählt
-  if(!S.login || (S.role==="team" && !S.login.name)){
+  if(!loggedIn()){
     app.append(S.auth.step==="name" ? regView() : authView());
-    S.week = S.week ?? 0; app.append(el("h2",{style:"margin:28px 0 12px"},"Der Plan"), planView(null,true)); return;
+    if(r==="training"){ S.week = S.week ?? 0; app.append(el("h2",{style:"margin:28px 0 12px"},"Der Plan"), planView(null,true)); }
+    return;
   }
 
   bar.hidden=false;
   bar.append(el("span",{class:"muted"}, isCoach()?"Trainerin":S.login.name), el("button",{class:"btn ghost",onclick:logout},"Abmelden"));
 
+  if(r==="start"){ ensureBoard(); app.append(startView()); return; }
+  if(r==="aufgaben"){ ensureBoard(); app.append(boardView()); return; }
+
+  // Wintertraining
   if(isCoach()){
     tabs.hidden=false;
     if(!S.tab) S.tab="coach";
     for(const [id,lbl] of [["plan","Plan"],["coach","Trainerin"]]){
       tabs.append(el("button",{role:"tab","aria-selected":String(S.tab===id),onclick:()=>{S.tab=id; render();}},lbl));
     }
-    if(S.tab==="coach"){ app.append(coachView()); return; }
+    if(S.tab==="coach"){ ensureAll(); app.append(coachView()); return; }
     S.week=S.week??0; app.append(planView(null,true)); return;
   }
-  tabs.hidden=true;
   if(S.me===undefined){ app.append(el("div",{class:"empty"},"Profil wird geladen …")); return; }
   if(!S.me || S.regEdit){ app.append(regView()); return; }
   if(S.week==null) S.week=currentWeek(S.me);
   app.append(meHeader(), planView(S.me, S.readonly));
+}
+
+/* ---------- Startseite ---------- */
+function startView(){
+  const box=el("div",{class:"home"});
+  const me=myName();
+  box.append(el("p",{class:"hello"}, me ? "Hallo "+me.split(" ")[0]+"!" : "Hallo Trainerin!"));
+  const grid=el("div",{class:"tiles"});
+  // Kachel Wintertraining
+  let trainLine="Plan, Einheiten abhaken, 1.000-m-Tests";
+  if(isCoach()) trainLine="Übersicht der Mannschaft und aller Einträge";
+  else if(S.me) trainLine="Woche "+currentWeek(S.me)+" · "+reqCount(S.me)+" von "+REQ_TOTAL+" Einheiten";
+  grid.append(tile("#training","Training","Wintertraining 26/27",trainLine,ICON_OAR));
+  // Kachel Wer macht was?
+  let boardLine="Aufgaben verteilen, Ämter übernehmen";
+  if(S.board){
+    const open=S.board.tasks.filter(t=>t.status!=="erledigt");
+    const mine=me?open.filter(t=>(t.assignees||[]).includes(me)).length:0;
+    const free=S.board.roles.filter(x=>!x.holder).length;
+    const parts=[open.length+" offene Aufgabe"+(open.length===1?"":"n")];
+    if(me) parts.push(mine+" davon deine");
+    if(free) parts.push(free+(free===1?" Amt frei":" Ämter frei"));
+    boardLine=parts.join(" · ");
+  }
+  grid.append(tile("#aufgaben","Organisation","Wer macht was?",boardLine,ICON_LIST));
+  grid.append(el("div",{class:"tile soon","aria-disabled":"true"},
+    el("span",{class:"eyebrow"},"Demnächst"),
+    el("span",{class:"tt"},"Weitere Funktion"),
+    el("span",{class:"tl"},"Hier ist Platz für die nächste Idee der Mannschaft.")));
+  box.append(grid);
+  return box;
+}
+const ICON_OAR='<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 40 L30 14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M28 16 l6 -10 6 2 -2 8 -8 4z" fill="currentColor"/><path d="M8 42 l4 -4" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".55"/></svg>';
+const ICON_LIST='<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="9" width="8" height="8" rx="2" fill="currentColor"/><rect x="8" y="21" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="8" y="33" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M22 13h18M22 25h18M22 37h12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+function tile(href,eyebrow,title,line,icon){
+  const ic=el("span",{class:"ti"}); ic.innerHTML=icon;
+  return el("a",{class:"tile",href},
+    el("span",{class:"top"},el("span",{class:"eyebrow"},eyebrow),ic),
+    el("span",{class:"tt"},title),
+    el("span",{class:"tl"},line),
+    el("span",{class:"go"},"Öffnen →"));
 }
 
 /* ---------- Login ---------- */
@@ -376,7 +527,7 @@ function authView(){
     try{ role=await call("wt_check",{p_code:c}); }
     catch(err){ A.busy=false; render(); toast(err.wrongCode?"Der Code stimmt nicht.":"Verbindung fehlgeschlagen. Bitte noch einmal versuchen."); return; }
     A.busy=false; S.role=role;
-    if(role==="coach"){ S.login={code:c, role}; writeLogin(S.login); S.tab="coach"; render(); await loadAll(); render(); return; }
+    if(role==="coach"){ S.login={code:c, role}; writeLogin(S.login); S.tab="coach"; render(); return; }
     S.login={code:c, role, name:null}; A.step="name"; render();
   };
   box.append(el("div",{},el("h2",{},"Anmelden"),
@@ -391,7 +542,7 @@ function meHeader(){
   const t=testsOf(S.me), d=(t.start!=null&&t.end!=null)?t.end-t.start:null;
   return el("div",{class:"me"},
     el("div",{class:"who"},
-      el("span",{class:"eyebrow"},"Gruppe "+S.me.group+" · "+doneCount(S.me)+" von "+TOTAL+" Einheiten"),
+      el("span",{class:"eyebrow"},"Gruppe "+S.me.group+" · "+progressText(S.me)),
       el("h2",{},S.me.name),
       el("div",{}, el("button",{class:"btn ghost",style:"padding-left:0",onclick:()=>{S.regEdit=true;render();}},"Name oder Gruppe ändern"))),
     el("div",{class:"tests",title:"Deine 1.000-m-Zeiten"},
@@ -405,19 +556,19 @@ function planView(doc, ro){
   const e=(doc&&doc.entries)||{};
   const strip=el("div",{class:"weeks",role:"tablist","aria-label":"Wochen"});
   PLAN.forEach((_,w)=>{
-    const on=UNITS.map(([u])=>!!(e[key(w,u)]&&e[key(w,u)].done));
-    strip.append(el("button",{class:"wk"+(on.every(Boolean)?" full":""),"aria-current":String(S.week===w),"aria-label":"Woche "+w,onclick:()=>{S.week=w;S.editing=null;render();}},
-      el("span",{class:"n"},w), doc?el("span",{class:"dots"},on.map(x=>el("i",{class:x?"on":""}))):null));
+    const us=unitsFor(w);
+    strip.append(el("button",{class:"wk"+(doc&&weekDone(e,w)?" full":""),"aria-current":String(S.week===w),"aria-label":"Woche "+w,onclick:()=>{S.week=w;S.editing=null;render();}},
+      el("span",{class:"n"},w), doc?el("span",{class:"dots"},us.map(([u])=>el("i",{class:(isDone(e,w,u)?"on ":"")+(isBonus(w,u)?"bonus":"")}))):null));
   });
   box.append(strip);
-  if(doc) box.append(el("div",{class:"legend"},el("span",{},el("i",{class:"on"}),"erledigt"),el("span",{},el("i",{class:"open"}),"offen"),el("span",{},"je Woche: Kraft · Ergo · Ausdauer")));
+  if(doc) box.append(el("div",{class:"legend"},el("span",{},el("i",{class:"on"}),"erledigt"),el("span",{},el("i",{class:"open"}),"offen"),el("span",{},el("i",{class:"bonus"}),"Kraft (Bonus)"),el("span",{},"Woche grün = Ergo + Ausdauer erledigt")));
   const w=S.week;
   const group=(doc&&doc.group)||null;
   box.append(el("div",{class:"weekhead"},
     el("h2",{},"Woche "+w),
-    el("span",{class:"muted"}, w===0?"Auftakt mit 1.000-m-Test":w===7?"Zwischentest 1.000 m":w===13?"Abschlusstest 1.000 m":"Kraft · Ergo · Ausdauer")));
+    el("span",{class:"muted"}, w===0?"Auftakt mit 1.000-m-Test":w===7?"Zwischentest 1.000 m":w===13?"Abschlusstest 1.000 m":"Ergo · Ausdauer · Kraft als Bonus")));
   const grid=el("div",{class:"units"});
-  for(const [u,lbl] of UNITS) grid.append(unitCard(w,u,lbl,e[key(w,u)],group,ro||!doc));
+  for(const [u,lbl] of unitsFor(w)) grid.append(unitCard(w,u,lbl,e[key(w,u)],group,ro||!doc));
   box.append(grid);
   if(!doc) box.append(el("p",{class:"muted",style:"margin-top:14px"},"Split-Zielwerte: Gruppe 1 2:00–2:10 /500 m, Gruppe 2 2:10–2:20 /500 m, jeweils plus der angegebenen Sekunden."));
   return box;
@@ -448,11 +599,11 @@ const LABELS={dauer:"Zeit",meter:"Meter",sz:"SZ",split:"Split",sport:"Sport",str
 
 function unitCard(w,u,lbl,entry,group,ro){
   const p=unitOf(w,u), done=!!(entry&&entry.done), k=key(w,u);
-  const card=el("article",{class:"unit"+(done?" done":"")});
+  const card=el("article",{class:"unit"+(done?" done":"")+(isBonus(w,u)?" bonus":"")});
   card.append(el("div",{class:"tag"},
-    el("span",{class:"eyebrow"}, u==="kraft"&&w===0?"Auftakt":lbl),
+    el("span",{class:"eyebrow"}, u==="kraft"&&w===0?"Auftakt":isBonus(w,u)?"Kraft · Bonus":lbl),
     ro&&!entry ? (p.test?el("span",{class:"pill test"},"1.000 m Test"):null)
-      : done?el("span",{class:"pill ok"},"✓ erledigt"):el("span",{class:"pill open"},"offen")));
+      : done?el("span",{class:"pill ok"},"✓ erledigt"):el("span",{class:"pill open"},isBonus(w,u)?"optional":"offen")));
   if(p.test && !(ro&&!entry)) card.append(el("span",{class:"pill test",style:"align-self:flex-start"},"1.000 m Test"));
   card.append(el("h3",{},p.title));
   if(p.desc) card.append(el("div",{class:"desc"},p.desc));
@@ -569,24 +720,25 @@ function coachView(){
   ov.append(el("div",{class:"weekhead",style:"margin-bottom:6px"},el("h3",{style:"margin:0"},"Mannschaft"),el("span",{class:"muted"},rowers.length+" angemeldet ",el("button",{class:"btn ghost",onclick:refreshAll},"Aktualisieren"))));
   const tw=el("div",{class:"tscroll"}); const tb=el("tbody");
   tw.append(el("table",{},el("thead",{},el("tr",{},
-    el("th",{},"Name"),el("th",{},"Gr."),el("th",{class:"num"},"Woche"),el("th",{},"Erledigt"),
+    el("th",{},"Name"),el("th",{},"Gr."),el("th",{class:"num"},"Woche"),el("th",{},"Erledigt"),el("th",{class:"num"},"Kraft"),
     el("th",{class:"num"},"1.000 m Start"),el("th",{class:"num"},"Zwischen"),el("th",{class:"num"},"Ende"),el("th",{class:"num"},"Δ"),el("th",{},"Zuletzt"))),tb));
   const registered=new Set(rowers.map(r=>r.data.name));
   for(const r of rowers){
-    const t=testsOf(r.data), d=(t.start!=null&&t.end!=null)?t.end-t.start:null, n=doneCount(r.data), la=lastAt(r.data);
+    const t=testsOf(r.data), d=(t.start!=null&&t.end!=null)?t.end-t.start:null, n=reqCount(r.data), nb=bonusCount(r.data), la=lastAt(r.data);
     tb.append(el("tr",{class:"click"+(S.sel===r.id?" sel":""),tabindex:"0",onclick:()=>{S.sel=S.sel===r.id?null:r.id;S.scrollToDetail=true;render();},onkeydown:ev=>{if(ev.key==="Enter"){S.sel=S.sel===r.id?null:r.id;S.scrollToDetail=true;render();}}},
       el("td",{},el("b",{},r.data.name||"–")),
       el("td",{},r.data.group||"–"),
-      el("td",{class:"num"},n?currentWeek(r.data):0),
-      el("td",{},el("span",{class:"bar"},el("i",{style:"width:"+Math.round(n/TOTAL*100)+"%"})),el("span",{class:"mono"},n+"/"+TOTAL)),
+      el("td",{class:"num"},currentWeek(r.data)),
+      el("td",{},el("span",{class:"bar"},el("i",{style:"width:"+Math.round(n/REQ_TOTAL*100)+"%"})),el("span",{class:"mono"},n+"/"+REQ_TOTAL)),
+      el("td",{class:"num"},nb+"/"+BONUS_TOTAL),
       el("td",{class:"num"},fmt(t.start)),el("td",{class:"num"},fmt(t.mid)),el("td",{class:"num"},fmt(t.end)),
       el("td",{class:"num "+(d==null?"":d<0?"faster":"slower")},fmtDelta(d)),
       el("td",{class:"muted"},la?fmtDate(la):"–")));
   }
   const missing=[1,2].flatMap(g=>ROSTER[g].filter(n=>!registered.has(n)).map(n=>[n,g]));
-  for(const [n,g] of missing) tb.append(el("tr",{class:"pending"},el("td",{},n),el("td",{},g),el("td",{colspan:"7"},"noch nicht angemeldet")));
+  for(const [n,g] of missing) tb.append(el("tr",{class:"pending"},el("td",{},n),el("td",{},g),el("td",{colspan:"8"},"noch nicht angemeldet")));
   ov.append(tw);
-  ov.append(el("p",{class:"muted",style:"font-size:13px;margin:10px 0 0"},"Zeile antippen für alle Einträge. Δ = Ende minus Start, negativ heißt schneller."));
+  ov.append(el("p",{class:"muted",style:"font-size:13px;margin:10px 0 0"},"Zeile antippen für alle Einträge. Erledigt = Ergo + Ausdauer (+ Auftakt in Woche 0), Kraft zählt als Bonus. Δ = Ende minus Start, negativ heißt schneller."));
   cols.append(ov);
 
   // Rechte Spalte: Detail oder Feed
@@ -617,7 +769,7 @@ function feedPanel(rowers){
   const f=el("div",{class:"feed"});
   for(const {r,k,v} of items.slice(0,12)){
     const [ , w, u]=k.match(/^w(\d+)-(\w+)$/)||[];
-    const ul=(UNITS.find(x=>x[0]===u)||[,""])[1];
+    const ul=((w!=null&&PLAN[+w]?unitsFor(+w):UNITS).find(x=>x[0]===u)||[,""])[1];
     f.append(el("div",{class:"it"},
       el("div",{class:"meta"},el("b",{style:"color:var(--ink)"},r.data.name)," · Woche "+w+" "+ul+" · "+fmtDate(v.at)),
       el("div",{class:"comment"},v.comment)));
@@ -630,24 +782,247 @@ function detailPanel(r){
   const t=testsOf(r.data);
   p.append(el("div",{class:"weekhead",style:"margin-bottom:4px"},el("h3",{style:"margin:0"},r.data.name),
     el("button",{class:"btn ghost",onclick:()=>{S.sel=null;render();}},"Schließen")));
-  p.append(el("div",{class:"muted",style:"font-size:13px;margin-bottom:10px"},"Gruppe "+(r.data.group||"–")+" · "+doneCount(r.data)+"/"+TOTAL+" Einheiten"));
+  p.append(el("div",{class:"muted",style:"font-size:13px;margin-bottom:10px"},"Gruppe "+(r.data.group||"–")+" · "+progressText(r.data)));
   p.append(el("div",{class:"tests",style:"margin-bottom:8px;justify-content:flex-start;flex-wrap:wrap"},
     ...TESTS.map(([id,lbl])=>el("div",{},el("span",{},lbl),el("b",{},fmt(t[id]))))));
   const e=r.data.entries||{};
   PLAN.forEach((_,w)=>{
     const row=el("div",{class:"wrow"},el("div",{class:"wn"},w));
-    for(const [u,lbl] of UNITS){
+    for(const [u,lbl] of unitsFor(w)){
       const v=e[key(w,u)];
       const c=el("div",{class:"cell"},el("span",{class:"eyebrow",style:"font-size:11px"},lbl),el("span",{style:"font-weight:600"},unitOf(w,u).title));
       if(v&&v.done){ c.append(el("span",{style:"color:var(--done);font-weight:600"},"✓ "+fmtDate(v.at)));
         const l=entryLine(v,u); if(l) c.append(el("span",{class:"mono",style:"font-size:12px"},l));
         if(v.comment) c.append(el("div",{class:"comment"},v.comment)); }
-      else c.append(el("span",{class:"muted"},"offen"));
+      else c.append(el("span",{class:"muted"},isBonus(w,u)?"optional":"offen"));
       row.append(c);
     }
     p.append(row);
   });
   return p;
+}
+
+/* ---------- Wer macht was? ---------- */
+const TASK_SUGGEST = [
+  ["Regattabericht schreiben","kurz"],["Verladen","kurz"],["Abladen","kurz"],["After Row organisieren","kurz"],
+  ["Weihnachtsfeier organisieren","kurz"],["Trainingslager planen","mittel"],["Wanderfahrt planen","mittel"]
+];
+const KIND = {kurz:"Kurzfristig", mittel:"Mittelfristig"};
+async function loadBoard(){
+  try{ const d=await call("wt_board",{p_code:S.login.code}); S.board={tasks:d.tasks||[], roles:d.roles||[], names:d.names||[]}; }
+  catch(err){ S.board={tasks:[],roles:[],names:[]}; handleError(err,"„Wer macht was?“ konnte nicht geladen werden."); }
+}
+async function boardCall(fn,args,okMsg){
+  S.busy=true; render();
+  try{ await call(fn,{p_code:S.login.code,...args}); await loadBoard(); if(okMsg) toast(okMsg); return true; }
+  catch(err){ handleError(err, /duplicate|unique/.test(err.message)?"Das gibt es schon.":"Speichern fehlgeschlagen. Bitte noch einmal versuchen."); return false; }
+  finally{ S.busy=false; render(); }
+}
+function allNames(){
+  const set=new Set([...ROSTER[1],...ROSTER[2],...((S.board&&S.board.names)||[])]);
+  return [...set].sort((a,b)=>a.localeCompare(b,"de"));
+}
+function isoToday(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+function fmtDay(iso,withYear){
+  if(!iso) return ""; const d=new Date(iso+"T12:00:00");
+  return d.toLocaleDateString("de-DE",withYear?{day:"numeric",month:"short",year:"numeric"}:{weekday:"short",day:"numeric",month:"short"});
+}
+function chip(name){ const me=myName(); return el("span",{class:"person"+(name===me?" isme":"")},name===me?name+" (du)":name); }
+
+function boardView(){
+  const box=el("div",{class:"board"});
+  if(!S.board){ box.append(el("div",{class:"empty"},"Wird geladen …")); return box; }
+  const openN=S.board.tasks.filter(t=>t.status!=="erledigt").length;
+  const free=S.board.roles.filter(r=>!r.holder).length;
+  S.bv=S.bv||"tasks";
+  const seg=el("div",{class:"tabs seg",role:"tablist"});
+  for(const [id,lbl] of [["tasks","Aufgaben · "+openN],["roles","Ämter"+(free?" · "+free+" frei":"")]])
+    seg.append(el("button",{role:"tab","aria-selected":String(S.bv===id),onclick:()=>{S.bv=id;S.taskForm=null;S.roleForm=null;S.confirm=null;render();}},lbl));
+  box.append(el("div",{class:"boardbar"},seg,
+    el("button",{class:"btn primary",onclick:()=>{ if(S.bv==="tasks") S.taskForm={title:"",kind:"kurz",due:"",notes:"",assignees:[]}; else S.roleForm={title:"",description:""}; render(); }},
+      S.bv==="tasks"?"+ Neue Aufgabe":"+ Neues Amt")));
+  box.append(S.bv==="tasks"?tasksView():rolesView());
+  return box;
+}
+
+/* Aufgaben */
+function tasksView(){
+  const box=el("div",{class:"stack"});
+  if(S.taskForm && !S.taskForm.id) box.append(taskForm(S.taskForm));
+  const me=myName();
+  S.tf=S.tf||"alle";
+  const filters=[["alle","Alle offenen"],["kurz","Kurzfristig"],["mittel","Mittelfristig"]];
+  if(me) filters.splice(1,0,["meine","Meine"]);
+  box.append(el("div",{class:"filters"},filters.map(([id,l])=>el("button",{class:"fchip","aria-pressed":String(S.tf===id),onclick:()=>{S.tf=id;render();}},l))));
+  const open=S.board.tasks.filter(t=>t.status!=="erledigt")
+    .filter(t=>S.tf==="alle"||(S.tf==="meine"?(t.assignees||[]).includes(me):t.kind===S.tf))
+    .sort((a,b)=>(a.due||"9999").localeCompare(b.due||"9999")||String(a.created_at).localeCompare(String(b.created_at)));
+  const groups = S.tf==="alle" ? [["kurz",open.filter(t=>t.kind==="kurz")],["mittel",open.filter(t=>t.kind==="mittel")]] : [[null,open]];
+  for(const [k,list] of groups){
+    if(k) box.append(el("h3",{class:"grouph"},KIND[k], el("span",{class:"muted"}," · "+list.length)));
+    if(!list.length) box.append(el("p",{class:"muted none"}, S.tf==="meine"?"Du hast gerade keine offenen Aufgaben.":"Keine offenen Aufgaben."));
+    for(const t of list) box.append(taskCard(t));
+  }
+  const done=S.board.tasks.filter(t=>t.status==="erledigt").sort((a,b)=>String(b.done_at).localeCompare(String(a.done_at)));
+  if(done.length){
+    box.append(el("button",{class:"btn ghost donebtn",onclick:()=>{S.showDone=!S.showDone;render();}},(S.showDone?"▾ ":"▸ ")+"Erledigt · "+done.length));
+    if(S.showDone) for(const t of done) box.append(taskCard(t));
+  }
+  return box;
+}
+function taskCard(t){
+  if(S.taskForm && S.taskForm.id===t.id) return taskForm(S.taskForm);
+  const me=myName(), done=t.status==="erledigt", mine=me&&(t.assignees||[]).includes(me);
+  const today=isoToday(), overdue=!done&&t.due&&t.due<today;
+  const card=el("article",{class:"task"+(done?" isdone":"")+(mine?" mine":"")});
+  card.append(el("button",{class:"tcheck","aria-pressed":String(done),title:done?"Wieder öffnen":"Als erledigt markieren","aria-label":done?"Wieder öffnen":"Als erledigt markieren",
+    onclick:()=>boardCall("wt_task_save",taskArgs(t,{status:done?"offen":"erledigt"}),done?"Wieder offen":"Erledigt")},done?"✓":""));
+  const body=el("div",{class:"tbody"});
+  body.append(el("div",{class:"thead"},el("h3",{},t.title),el("span",{class:"pill kind-"+t.kind},KIND[t.kind])));
+  const meta=el("div",{class:"tmeta"});
+  if(t.due) meta.append(el("span",{class:overdue?"due over":"due"},(overdue?"überfällig · ":"bis ")+fmtDay(t.due)));
+  if(done&&t.done_at) meta.append(el("span",{class:"muted"},"erledigt am "+fmtDate(t.done_at)));
+  if(meta.childNodes.length) body.append(meta);
+  const people=el("div",{class:"people"});
+  if((t.assignees||[]).length) t.assignees.forEach(n=>people.append(chip(n)));
+  else people.append(el("span",{class:"nobody"},"Noch niemand"));
+  body.append(people);
+  if(t.notes) body.append(el("div",{class:"comment"},t.notes));
+  const a=el("div",{class:"actions"});
+  if(!done && me){
+    if(mine) a.append(el("button",{class:"btn",onclick:()=>boardCall("wt_task_save",taskArgs(t,{assignees:t.assignees.filter(n=>n!==me)}),"Ausgetragen")},"Ich steige aus"));
+    else a.append(el("button",{class:"btn primary",onclick:()=>boardCall("wt_task_save",taskArgs(t,{assignees:[...(t.assignees||[]),me]}),"Eingetragen")},(t.assignees||[]).length?"Ich mache mit":"Ich übernehme das"));
+  }
+  a.append(el("button",{class:"btn ghost",onclick:()=>{S.taskForm={...t,assignees:[...(t.assignees||[])],due:t.due||""};render();}},"Bearbeiten"));
+  if(S.confirm==="t"+t.id) a.append(el("span",{class:"confirm"},"Wirklich löschen?",
+      el("button",{class:"btn danger",onclick:()=>{S.confirm=null;boardCall("wt_task_delete",{p_id:t.id},"Gelöscht");}},"Löschen"),
+      el("button",{class:"btn ghost",onclick:()=>{S.confirm=null;render();}},"Nein")));
+  else a.append(el("button",{class:"btn ghost",onclick:()=>{S.confirm="t"+t.id;render();}},"Löschen"));
+  body.append(a);
+  card.append(body);
+  return card;
+}
+function taskArgs(t,over){
+  const x={...t,...over};
+  return {p_id:x.id||null, p_title:x.title, p_kind:x.kind, p_due:x.due||null, p_notes:x.notes||"", p_assignees:x.assignees||[], p_status:x.status||"offen", p_actor:myName()||"Trainerin"};
+}
+function taskForm(f){
+  const box=el("form",{class:"panel tform",onsubmit:async ev=>{
+    ev.preventDefault();
+    if(!f.title.trim()){ toast("Bitte einen Titel eingeben."); return; }
+    const ok=await boardCall("wt_task_save",taskArgs(f,{}),f.id?"Gespeichert":"Aufgabe angelegt");
+    if(ok){ S.taskForm=null; render(); }
+  }});
+  box.append(el("h3",{},f.id?"Aufgabe bearbeiten":"Neue Aufgabe"));
+  const title=el("input",{id:"task-title",value:f.title,maxlength:"120",placeholder:"z. B. Verladen für die Herbstregatta",oninput:e=>{f.title=e.target.value;}});
+  box.append(el("label",{class:"f"},"Was ist zu tun?",title));
+  if(!f.id) box.append(el("div",{class:"suggest"},TASK_SUGGEST.map(([s,k])=>el("button",{type:"button",class:"fchip",onclick:()=>{f.title=s;f.kind=k;render();const i=$("#task-title"); if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}}},s))));
+  const kind=el("div",{class:"tabs seg small",role:"radiogroup","aria-label":"Art"});
+  for(const [k,l] of Object.entries(KIND)) kind.append(el("button",{type:"button",role:"radio","aria-checked":String(f.kind===k),"aria-selected":String(f.kind===k),onclick:()=>{f.kind=k;render();}},l));
+  const due=el("input",{id:"task-due",type:"date",value:f.due||"",oninput:e=>{f.due=e.target.value;}});
+  box.append(el("div",{class:"row2"},el("div",{class:"f"},"Art",kind),el("label",{class:"f"},"Fällig am (optional)",due)));
+  const me=myName();
+  const names=allNames(); if(me){ const i=names.indexOf(me); if(i>0){ names.splice(i,1); names.unshift(me); } }
+  const pick=el("div",{class:"namegrid pick"});
+  for(const n of names) pick.append(el("button",{type:"button","aria-pressed":String(f.assignees.includes(n)),onclick:e=>{
+    f.assignees = f.assignees.includes(n) ? f.assignees.filter(x=>x!==n) : [...f.assignees,n];
+    e.currentTarget.setAttribute("aria-pressed",String(f.assignees.includes(n)));
+  }},n===me?n+" (ich)":n));
+  box.append(el("div",{class:"f"},"Wer macht es? (mehrere möglich, gern auch offen lassen)",pick));
+  box.append(el("label",{class:"f"},"Notiz (optional)",el("textarea",{id:"task-notes",maxlength:"2000",placeholder:"Treffpunkt, Uhrzeit, Details …",oninput:e=>{f.notes=e.target.value;}},f.notes||"")));
+  box.append(el("div",{class:"actions"},
+    el("button",{class:"btn primary",type:"submit",disabled:S.busy},f.id?"Speichern":"Aufgabe anlegen"),
+    el("button",{class:"btn ghost",type:"button",onclick:()=>{S.taskForm=null;render();}},"Abbrechen")));
+  return box;
+}
+
+/* Ämter */
+function rolesView(){
+  const box=el("div",{class:"stack"});
+  if(S.roleForm && !S.roleForm.id) box.append(roleForm(S.roleForm));
+  box.append(el("p",{class:"muted intro"},"Ämter wechseln: Wer ein Amt übernimmt, kann eine Amtszeit festlegen und es danach wieder abgeben. Der Verlauf zeigt, wer es vorher hatte."));
+  const roles=[...S.board.roles].sort((a,b)=>(!!a.holder-!!b.holder)||a.title.localeCompare(b.title,"de"));
+  if(!roles.length) box.append(el("p",{class:"muted none"},"Noch keine Ämter angelegt."));
+  const grid=el("div",{class:"roles"});
+  for(const r of roles) grid.append(roleCard(r));
+  box.append(grid);
+  return box;
+}
+function roleCard(r){
+  if(S.roleForm && S.roleForm.id===r.id) return roleForm(S.roleForm);
+  const me=myName(), mine=me&&r.holder===me, today=isoToday();
+  const expired=r.holder&&r.until&&r.until<today;
+  const card=el("article",{class:"role"+(r.holder?"":" free")+(mine?" mine":"")});
+  card.append(el("div",{class:"thead"},el("h3",{},r.title),
+    !r.holder?el("span",{class:"pill free"},"frei"):expired?el("span",{class:"pill warnp"},"Amtszeit abgelaufen"):null));
+  if(r.description) card.append(el("div",{class:"desc"},r.description));
+  if(r.holder){
+    card.append(el("div",{class:"holder"},chip(r.holder),el("span",{class:"muted"},"seit "+fmtDay(r.since,true))));
+    card.append(el("div",{class:"muted small"}, r.until?(expired?"Geplant bis "+fmtDay(r.until,true)+" – Zeit für einen Wechsel.":"Amtszeit bis "+fmtDay(r.until,true)):"Keine Amtszeit festgelegt."));
+  } else card.append(el("div",{class:"nobody"},"Niemand hat dieses Amt gerade."));
+
+  const take=S.take&&S.take.id===r.id?S.take:null;
+  if(take){
+    const sel=el("select",{id:"take-who-"+r.id,onchange:e=>{take.who=e.target.value;}}, allNames().map(n=>el("option",{value:n,selected:n===take.who},n)));
+    const until=el("input",{id:"take-until-"+r.id,type:"date",value:take.until||"",oninput:e=>{take.until=e.target.value;}});
+    card.append(el("form",{class:"takeform",onsubmit:async ev=>{
+      ev.preventDefault(); if(!take.who){ toast("Bitte eine Person wählen."); return; }
+      const ok = take.mode==="until" ? await boardCall("wt_role_until",{p_id:r.id,p_until:take.until||null},"Amtszeit gespeichert")
+                                     : await boardCall("wt_role_take",{p_id:r.id,p_name:take.who,p_until:take.until||null},take.who===me?"Du hast das Amt übernommen":"Eingetragen");
+      if(ok){ S.take=null; render(); }
+    }},
+      take.mode==="until"?null:el("label",{class:"f"},"Wer?",sel),
+      el("label",{class:"f"},"Amtszeit bis (optional)",until),
+      r.holder&&take.mode!=="until"?el("p",{class:"muted small",style:"margin:0"},r.holder+" gibt das Amt damit ab."):null,
+      el("div",{class:"actions"},el("button",{class:"btn primary",type:"submit",disabled:S.busy},take.mode==="until"?"Speichern":"Übernehmen"),
+        el("button",{class:"btn ghost",type:"button",onclick:()=>{S.take=null;render();}},"Abbrechen"))));
+  } else {
+    const a=el("div",{class:"actions"});
+    if(mine){
+      a.append(el("button",{class:"btn",onclick:()=>{S.take={id:r.id,who:me,until:r.until||"",mode:"until"};render();}},"Amtszeit ändern"));
+    }
+    if(r.holder && (mine||isCoach())){
+      if(S.confirm==="r"+r.id) a.append(el("span",{class:"confirm"},"Amt abgeben?",
+        el("button",{class:"btn danger",onclick:()=>{S.confirm=null;boardCall("wt_role_release",{p_id:r.id},"Amt abgegeben");}},"Abgeben"),
+        el("button",{class:"btn ghost",onclick:()=>{S.confirm=null;render();}},"Nein")));
+      else a.append(el("button",{class:"btn",onclick:()=>{S.confirm="r"+r.id;render();}},"Abgeben"));
+    }
+    if(!mine){
+      a.append(el("button",{class:"btn"+(r.holder?"":" primary"),onclick:()=>{S.take={id:r.id,who:me||allNames()[0],until:"",mode:"take"};render();}},
+        me ? (r.holder?"Übernehmen":"Ich übernehme") : "Jemanden eintragen"));
+    }
+    a.append(el("button",{class:"btn ghost",onclick:()=>{S.roleForm={id:r.id,title:r.title,description:r.description||""};render();}},"Bearbeiten"));
+    card.append(a);
+  }
+  const hist=(r.history||[]).filter(h=>h.to_date);
+  if(hist.length){
+    const open=S.histOpen===r.id;
+    card.append(el("button",{class:"btn ghost hist",onclick:()=>{S.histOpen=open?null:r.id;render();}},(open?"▾ ":"▸ ")+"Verlauf · "+hist.length));
+    if(open) card.append(el("ul",{class:"history"},hist.map(h=>el("li",{},el("b",{},h.holder)," · "+fmtDay(h.from_date,true)+" – "+fmtDay(h.to_date,true)))));
+  }
+  return card;
+}
+function roleForm(f){
+  const box=el("form",{class:"panel tform",onsubmit:async ev=>{
+    ev.preventDefault();
+    if(!f.title.trim()){ toast("Bitte einen Namen für das Amt eingeben."); return; }
+    const ok=await boardCall("wt_role_save",{p_id:f.id||null,p_title:f.title,p_description:f.description},f.id?"Gespeichert":"Amt angelegt");
+    if(ok){ S.roleForm=null; render(); }
+  }});
+  box.append(el("h3",{},f.id?"Amt bearbeiten":"Neues Amt"));
+  box.append(el("label",{class:"f"},"Bezeichnung",el("input",{id:"role-title",value:f.title,maxlength:"80",placeholder:"z. B. Getränkewartin",oninput:e=>{f.title=e.target.value;}})));
+  box.append(el("label",{class:"f"},"Was gehört dazu? (optional)",el("textarea",{id:"role-desc",maxlength:"1000",oninput:e=>{f.description=e.target.value;}},f.description||"")));
+  const a=el("div",{class:"actions"},
+    el("button",{class:"btn primary",type:"submit",disabled:S.busy},f.id?"Speichern":"Amt anlegen"),
+    el("button",{class:"btn ghost",type:"button",onclick:()=>{S.roleForm=null;S.confirm=null;render();}},"Abbrechen"));
+  if(f.id){
+    if(S.confirm==="rd"+f.id) a.append(el("span",{class:"confirm"},"Amt samt Verlauf löschen?",
+      el("button",{class:"btn danger",type:"button",onclick:async()=>{S.confirm=null;const ok=await boardCall("wt_role_delete",{p_id:f.id},"Amt gelöscht");if(ok){S.roleForm=null;render();}}},"Löschen"),
+      el("button",{class:"btn ghost",type:"button",onclick:()=>{S.confirm=null;render();}},"Nein")));
+    else a.append(el("button",{class:"btn ghost",type:"button",onclick:()=>{S.confirm="rd"+f.id;render();}},"Amt löschen"));
+  }
+  box.append(a);
+  return box;
 }
 
 /* ---------- Start ---------- */
@@ -661,7 +1036,7 @@ render();
   S.login=saved; S.role=saved.role; render();
   try{ S.role=await call("wt_check",{p_code:saved.code}); S.login.role=S.role; }
   catch(err){ if(err.wrongCode){ logout(); toast("Der Code hat sich geändert. Bitte neu anmelden."); return; } }
-  if(S.role==="coach"){ await loadAll(); render(); return; }
+  if(S.role==="coach"){ render(); return; }
   if(!S.login.name){ S.auth.step="name"; render(); return; }
   await loadMe(); render();
 })();
